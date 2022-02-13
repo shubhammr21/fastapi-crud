@@ -1,0 +1,83 @@
+version: "3"
+
+volumes:
+  local_postgres_data: {}
+  local_postgres_data_backups: {}
+#   local_redis_data:
+#     driver: local
+
+# networks:
+#   proxy:
+#     external: true
+
+services:
+  backend: &backend
+    build:
+      context: .
+      dockerfile: ./compose/local/backend/Dockerfile
+    image: fastapi_backend
+    container_name: fastapi_backend
+    depends_on:
+      - postgres
+      # - redis
+      # - mailhog
+    volumes:
+      - ./src:/app:z
+    env_file:
+      - ./.envs/.local/.backend
+      - ./.envs/.local/.postgres
+    ports:
+      - "8000:8000"
+    # networks:
+    #   - proxy
+    command: /start
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: local_postgres
+    container_name: local_postgres
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data:Z
+      - local_postgres_data_backups:/backups:z
+    env_file:
+      - ./.envs/.local/.postgres
+
+  # mailhog:
+  #   image: mailhog/mailhog:v1.0.0
+  #   container_name: gp_mdas_local_mailhog
+  #   ports:
+  #     - "8025:8025"
+
+  # redis:
+  #   image: bitnami/redis:6.2
+  #   container_name: gp_mdas_redis
+  #   networks:
+  #     - proxy
+  #   environment:
+  #     # ALLOW_EMPTY_PASSWORD is recommended only for development.
+  #     - ALLOW_EMPTY_PASSWORD=yes
+  #     # - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - "local_redis_data:/bitnami/redis/data"
+
+  # node:
+  #   build:
+  #     context: .
+  #     dockerfile: ./compose/local/node/Dockerfile
+  #   image: gp_mdas_local_node
+  #   container_name: node
+  #   depends_on:
+  #     - django
+  #   volumes:
+  #     - .:/app:z
+  #     # http://jdlm.info/articles/2016/03/06/lessons-building-node-app-docker.html
+  #     - /app/node_modules
+  #   command: npm run dev
+  #   ports:
+  #     - "3000:3000"
+  #     # Expose browsersync UI: https://www.browsersync.io/docs/options/#option-ui
+  #     - "3001:3001"
